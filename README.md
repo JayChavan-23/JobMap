@@ -2,6 +2,8 @@
 
 A React-based web application for tracking job applications across South Australian councils. Features an interactive map with council boundaries and a synchronized list view for managing application statuses.
 
+![JobMap Preview](./src/assets/image.png)
+
 ## How it works?
 
 The application loads SA council boundary data from a GeoJSON file and renders it on an interactive Leaflet map. Each council can be assigned a status (None, Applied, Response, Rejected, Offer) which determines its color on the map. The data is stored locally in the browser's localStorage and persists across sessions.
@@ -51,3 +53,4 @@ The application loads SA council boundary data from a GeoJSON file and renders i
 ```bash
 npm run build
 ```
+
