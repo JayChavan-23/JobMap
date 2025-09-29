@@ -14,35 +14,42 @@ type Props = {
 
 export default function MapView({ selectedId, onSelect, filter = 'ALL' }: Props) {
   const { fc, ready } = useCouncils();
-  const { getStatus, setStatus } = useStatuses();
+  const { getStatus } = useStatuses();
+
+  // Filter features based on status
+  const filteredFeatures = useMemo(() => {
+    if (!fc) return null;
+    return {
+      ...fc,
+      features: fc.features.filter(feature => {
+        const p: any = feature.properties || {};
+        const id = p.id;
+        const status = getStatus(id);
+        return filter === 'ALL' || status === filter;
+      })
+    };
+  }, [fc, filter, getStatus]);
 
   const styleFn = useMemo(() => (feature: Feature) => {
     const p: any = feature.properties || {};
     const id = p.id;
     const s = getStatus(id);
-    const active = filter === 'ALL' || s === filter;
     return {
       color: id === selectedId ? '#0f172a' : '#1f2937',
       weight: id === selectedId ? 3 : 1,
-      opacity: active ? 1 : 0.25,
+      opacity: 1,
       fillColor: STATUS_COLORS[s],
-      fillOpacity: s === 'NONE' ? 0.05 : (active ? 0.5 : 0.15),
+      fillOpacity: s === 'NONE' ? 0.05 : 0.5,
     };
-  }, [getStatus, selectedId, filter]);
+  }, [getStatus, selectedId]);
 
   function onEachFeature(feature: Feature, layer: any) {
     const p: any = feature.properties || {};
     layer.bindTooltip(p.name || p.Council || p.id);
     layer.on('click', () => onSelect(p.id));
-    // optional: shift+click to cycle statuses
-    layer.on('dblclick', (e: MouseEvent) => {
-      const order = STATUS_ORDER;
-      const next = order[(order.indexOf(getStatus(p.id)) + 1) % order.length];
-      setStatus(p.id, next);
-    });
   }
 
-  if (!ready || !fc) return (
+  if (!ready || !filteredFeatures) return (
     <div className="h-full grid place-items-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -59,7 +66,7 @@ export default function MapView({ selectedId, onSelect, filter = 'ALL' }: Props)
           attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <GeoJSON data={fc as any} style={styleFn as any} onEachFeature={onEachFeature} />
+        <GeoJSON data={filteredFeatures as any} style={styleFn as any} onEachFeature={onEachFeature} />
       </MapContainer>
       
       {/* Map Legend */}
@@ -88,7 +95,7 @@ export default function MapView({ selectedId, onSelect, filter = 'ALL' }: Props)
           </div>
         </div>
         <p className="text-xs text-slate-500 mt-3 pt-2 border-t border-slate-200">
-          Double-click councils to cycle status
+          Click councils to select, then update status in the sidebar
         </p>
       </div>
     </div>
